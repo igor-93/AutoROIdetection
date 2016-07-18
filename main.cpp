@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string>
+#include <fstream>
 #include <iostream>
 
 using namespace cv;
@@ -12,68 +13,6 @@ bool myComparison(const pair<int,int> &a,const pair<int,int> &b)
 {
 	 return a.first > b.first;
 }
-
-
-// Canny filter
-//Global variables
-
-/*Mat src, src_gray;
-Mat dst, detected_edges;
-
-int edgeThresh = 1;
-int lowThreshold;
-int const max_lowThreshold = 100;
-int ratio = 3;
-int kernel_size = 3;
-char* window_name = "Edge Map";
-string filename = "/home/igorpesic/Desktop/undistorted_1.bmp";*/
-
-/*
-void CannyThreshold(int, void*)
-{
-	/// Reduce noise with a kernel 3x3
-	blur( src_gray, detected_edges, Size(3,3) );
-
-	/// Canny detector
-	Canny( detected_edges, detected_edges, lowThreshold, lowThreshold*ratio, kernel_size );
-
-	/// Using Canny's output as a mask, we display our result
-	dst = Scalar::all(0);
-
-	src.copyTo( dst, detected_edges);
-	imshow( window_name, dst );
-}
-
-
-int main( int argc, char** argv )
-{
-	/// Load an image
-	//src = imread( "/home/igorpesic/workspace/OMABS/trunk/OMABS/images/Series_6a/1/40_12_390_21714620_183.bmp" );
-	src = imread(filename);
-	if( !src.data )
-	{ return -1; }
-
-	/// Create a matrix of the same type and size as src (for dst)
-	dst.create( src.size(), src.type() );
-
-	/// Convert the image to grayscale
-	cvtColor( src, src_gray, CV_BGR2GRAY );
-
-	/// Create a window
-	namedWindow( window_name, CV_WINDOW_NORMAL );
-
-	/// Create a Trackbar for user to enter threshold
-	createTrackbar( "Min Threshold:", window_name, &lowThreshold, max_lowThreshold, CannyThreshold );
-
-	/// Show the image
-	CannyThreshold(0, 0);
-
-	/// Wait until user exit program by pressing a key
-	waitKey(0);
-
-	return 0;
-}*/
-
 
 
 /* laplacian
@@ -129,7 +68,7 @@ int main( int argc, char** argv )
 
 	int c;
 
-    string filename = "/home/igorpesic/ClionProjects/AutoROIdetection/test1.bmp";
+    string filename = "/home/igorpesic/ClionProjects/AutoROIdetection/test6.bmp";
 	/// Load an image
 	src = imread(filename);
 
@@ -141,6 +80,16 @@ int main( int argc, char** argv )
 	/// Convert it to gray
 	cvtColor( src, src_gray, CV_BGR2GRAY );
 
+	double claheSize = 1.8;
+	Ptr<CLAHE> clahe = createCLAHE(claheSize, Size(claheSize, claheSize));
+	Mat outputImg;
+	clahe->apply(src_gray, src_gray);
+
+	/// Create window
+	namedWindow( "after clahe", CV_WINDOW_NORMAL );
+	imshow( "after clahe", src_gray );
+	waitKey(0);
+
 	/// Create window
 	namedWindow( window_name, CV_WINDOW_NORMAL );
 
@@ -150,31 +99,53 @@ int main( int argc, char** argv )
 
 	/// Gradient X
 	//Scharr( src_gray, grad_x, ddepth, 1, 0, scale, delta, BORDER_DEFAULT );
-	Sobel( src_gray, grad_x, ddepth, 4, 0, 5, scale, delta, BORDER_DEFAULT );
+	Sobel( src_gray, grad_x, ddepth, 4, 0, 5, scale, delta, BORDER_ISOLATED );
 	convertScaleAbs( grad_x, abs_grad_x );
+
+	// filter dark pixels
+	inRange(abs_grad_x, 150, 255, abs_grad_x);
 
 	Mat col_sum;
 	cv::reduce(abs_grad_x, col_sum, 0, CV_REDUCE_SUM, CV_32S);
 	cout << "columns sumed up" << endl;
 	cout << col_sum << endl;
+	ofstream myfile;
+	myfile.open ("/home/igorpesic/ClionProjects/AutoROIdetection/example.txt");
+	myfile << col_sum;
+	myfile.close();
 
-	int size_to_save = 30;
+	// save 30 cols with biggest values
+	int size_to_save = 50;
 	vector<pair<int,int> > max(size_to_save);
 	for(int i = 0; i < col_sum.cols; i++){
 		if(col_sum.at<int>(i) > max[size_to_save-1].first){
 			max[size_to_save-1].first = col_sum.at<int>(i);
 			max[size_to_save-1].second = i;
-			//sort(max.begin(), max.end(), std::greater<int>());
-
 			sort(max.begin(), max.end(), myComparison);
 		}
 	}
+
 	int line_col_1, line_col_2;	// columns of the two ROI lines
 	bool line_col_2_found = false;
-	line_col_1 = max[0].second;
+	bool left_found = false;
 	for(int i = 0; i < size_to_save; i++){
+		if(abs(max[i].second - abs_grad_x.cols) > 5 && max[i].second > 5)
+		{
+			line_col_1 = max[i].second;
+			cout << "line_col_1 = " << line_col_1 << endl;
+			break;
+		}
+	}
+	if(line_col_1 < round(abs_grad_x.cols / 2.0))
+		left_found = true;
+	for(int i = 0; i < size_to_save; i++)
+	{
 		cout << "max: " << max[i].first << " at place " <<  max[i].second <<  endl;
-		if(abs(max[i].second - max[0].second) > 10 && !line_col_2_found){
+		if(abs(max[i].second - max[0].second) > 10 && !line_col_2_found
+				&& abs(max[i].second - abs_grad_x.cols) > 5 && max[i].second > 5	// must be at least 5 px away from the edge
+				&& ((left_found && max[i].second > round(abs_grad_x.cols / 2.0))
+					 || (!left_found && max[i].second < round(abs_grad_x.cols / 2.0)) ) )
+		{
 			line_col_2 = max[i].second;
 			line_col_2_found = true;
 			cout << "line_col_2: " << line_col_2 << endl;
