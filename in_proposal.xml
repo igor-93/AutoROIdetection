@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="utf-8"?>
+<opencv_storage>
+  <camera_calibration>
+    <!-- The size of a square in some user defined metric system (millimeter)-->
+    <square_size>2.4850000381469727e+01</square_size>
+    <camera_matrix1 type_id="opencv-matrix">
+      <rows>3</rows>
+      <cols>3</cols>
+      <dt>d</dt>
+      <data>
+        1.0917879134671455e+03 0. 6.3950000000000000e+02 0.
+        1.0917879134671455e+03 4.7950000000000000e+02 0. 0. 1.</data></camera_matrix1>
+    <camera_matrix2 type_id="opencv-matrix">
+      <rows>3</rows>
+      <cols>3</cols>
+      <dt>d</dt>
+      <data>
+        1.0936555225273419e+03 0. 6.3950000000000000e+02 0.
+        1.0936555225273419e+03 4.7950000000000000e+02 0. 0. 1.</data></camera_matrix2>
+    <distortion_coefficients1 type_id="opencv-matrix">
+      <rows>5</rows>
+      <cols>1</cols>
+      <dt>d</dt>
+      <data>
+        -2.3067651406434544e-01 7.4099939373848435e-03
+        1.4859149317212334e-04 2.2277336740401496e-04 2.3355686116579344e-01</data></distortion_coefficients1>
+    <distortion_coefficients2 type_id="opencv-matrix">
+      <rows>5</rows>
+      <cols>1</cols>
+      <dt>d</dt>
+      <data>
+        -2.5047244578627553e-01 1.1297321546530094e-01
+        1.9247242359558155e-03 1.2662227931495888e-03
+        -2.5431814077645994e-02</data></distortion_coefficients2>
+    <avg_reprojection_error1>2.3634897037263938e-01</avg_reprojection_error1>
+    <avg_reprojection_error2>2.8417542154170011e-01</avg_reprojection_error2>
+    <rotation_matrix type_id="opencv-matrix">
+      <rows>3</rows>
+      <cols>3</cols>
+      <dt>d</dt>
+      <data>
+        9.9924068057243320e-01 1.4452183541307935e-02 3.6182822996953065e-02
+        -1.4128969401244603e-02 9.9985810741478398e-01
+        -9.1726365122051113e-03 -3.6310253549089705e-02
+        8.6544455521247957e-03 9.9930309018805008e-01</data></rotation_matrix>
+    <translation_matrix type_id="opencv-matrix">
+      <rows>3</rows>
+      <cols>1</cols>
+      <dt>d</dt>
+      <data>
+        -7.9245665416832722e+01 9.8577672164297525e-01
+        1.9762768046634707e+00</data></translation_matrix>
+  </camera_calibration>
+
+  <general_parameters>
+    <flow_tracking_timestamp>"2015-08-30T09:30:10"</flow_tracking_timestamp>
+    <location>"stollberg"</location>
+
+    <images_folder>images\S6_01\</images_folder>
+    <cam1_id>_21628798_</cam1_id>
+    <cam2_id>_21714620_</cam2_id>
+    <main_camera>1</main_camera>
+
+    <image_size>1280 960</image_size>
+
+    <fps>15</fps>
+
+    <duration>8</duration>
+
+    <canny>10.0</canny>
+    <clahe>1.8</clahe>
+    <radius>50.0</radius>
+    <sigma>3</sigma>
+    <threshold>60</threshold>
+
+    <flow_direction>
+      <!-- x y coordinates of start point-->
+      <start_point>600 900</start_point>
+      <!-- x y coordinates of end point-->
+      <end_point>600 15</end_point>
+    </flow_direction>
+
+    <canal_width>1400</canal_width>
+    <canal_height>1000</canal_height>
+    <!-- in promiles-->
+    <canal_slope>10</canal_slope>
+    <!-- in mm-->
+    <canal_roughness>0.75</canal_roughness>
+
+    <critical_depth_level>800</critical_depth_level>
+    <critical_velocity_level>500</critical_velocity_level>
+
+    <cam_distance_to_bottom>1700</cam_distance_to_bottom>
+    <distance_between_cameras>56</distance_between_cameras>
+    <cam_lens>70</cam_lens>
+    
+    <roi_manual></roi_manual>
+
+  </general_parameters>
+</opencv_storage>
