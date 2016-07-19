@@ -30,7 +30,7 @@ int main( int argc, char** argv )
 
 	int c;
 
-    string filename = "/home/igorpesic/ClionProjects/AutoROIdetection/test1.bmp";
+    string filename = "/home/igorpesic/ClionProjects/AutoROIdetection/test6.bmp";
 	/// Load an image
 	src = imread(filename);
 
@@ -145,7 +145,6 @@ int main( int argc, char** argv )
 		}
 
 	}
-
 
 	imshow( window_name, abs_grad_x );
 	Point ptUL(line_col_1, 0);
