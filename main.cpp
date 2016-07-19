@@ -14,53 +14,15 @@ bool myComparison(const pair<int,int> &a,const pair<int,int> &b)
 	 return a.first > b.first;
 }
 
-
-/* laplacian
-int main( int argc, char** argv )
+bool myComparisonD(const pair<double,int> &a,const pair<double,int> &b)
 {
-	Mat src, src_gray, dst;
-	int kernel_size = 3;
-	int scale = 1;
-	int delta = 0;
-	int ddepth = CV_16S;
-	char* window_name = "Laplace Demo";
-
-	int c;
-
-	/// Load an image
-	src = imread( filename );
-
-	if( !src.data )
-	{ return -1; }
-
-	/// Remove noise by blurring with a Gaussian filter
-	GaussianBlur( src, src, Size(3,3), 0, 0, BORDER_DEFAULT );
-
-	/// Convert the image to grayscale
-	cvtColor( src, src_gray, CV_BGR2GRAY );
-
-	/// Create window
-	namedWindow( window_name, CV_WINDOW_NORMAL );
-
-	/// Apply Laplace function
-	Mat abs_dst;
-
-	Laplacian( src_gray, dst, ddepth, kernel_size, scale, delta, BORDER_DEFAULT );
-	convertScaleAbs( dst, abs_dst );
-
-	/// Show what you got
-	imshow( window_name, abs_dst );
-
-	waitKey(0);
-
-	return 0;
-}*/
+	return a.first > b.first;
+}
 
 // sobel
 int main( int argc, char** argv )
 {
 	Mat src, src_gray, dst;
-	Mat grad;
 	char* window_name = "Sobel Demo - Simple Edge Detector";
 	int scale = 1;
 	int delta = 0;
@@ -68,7 +30,7 @@ int main( int argc, char** argv )
 
 	int c;
 
-    string filename = "/home/igorpesic/ClionProjects/AutoROIdetection/test6.bmp";
+    string filename = "/home/igorpesic/ClionProjects/AutoROIdetection/test1.bmp";
 	/// Load an image
 	src = imread(filename);
 
@@ -114,39 +76,70 @@ int main( int argc, char** argv )
 	myfile << col_sum;
 	myfile.close();
 
-	// save 30 cols with biggest values
-	int size_to_save = 50;
-	vector<pair<int,int> > max(size_to_save);
-	for(int i = 0; i < col_sum.cols; i++){
-		if(col_sum.at<int>(i) > max[size_to_save-1].first){
-			max[size_to_save-1].first = col_sum.at<int>(i);
-			max[size_to_save-1].second = i;
-			sort(max.begin(), max.end(), myComparison);
+	// get gradient of col_sum
+	vector<int> grad(col_sum.cols-1, 0);
+	for(int i = 0; i < grad.size(); i++)
+	{
+		grad[i] = abs(col_sum.at<int>(i) - col_sum.at<int>(i+1));
+	}
+
+
+	// pixels to cut off left and right
+	// TODO: we'll need this later to adjust the results
+	int cutoff = 7;
+	//grad.erase(grad.begin(), grad.begin()+cutoff);
+	//grad.erase(grad.end()-cutoff , grad.end());
+
+	// save 20 cols with biggest values
+	int size_to_save = 30;
+	vector<pair<int,int> > max_grad(size_to_save);
+	for(int i = 0; i < grad.size(); i++){
+		if(grad[i] > max_grad[size_to_save-1].first){
+			max_grad[size_to_save-1].first = grad[i];
+			max_grad[size_to_save-1].second = i;
+			sort(max_grad.begin(), max_grad.end(), myComparison);
 		}
 	}
+
+	// for all of the found, find ave (with the other +-20 pixels) and choose those with the biggest diff from ave
+	int local_area = 10;
+	vector<pair<double,int> > diff_to_ave;
+	for(int i = 0; i < size_to_save; i++)
+	{
+		int local_sum = 0;
+		for(int j = max_grad[i].second-local_area; j < max_grad[i].second+local_area; j++)
+		{
+			if(j < 0 || j > grad.size())
+			{
+				local_sum = 0;
+				break;
+			}
+			if(j == max_grad[i].second)
+				continue;
+			local_sum += grad[j];
+		}
+		double ave = (double)(local_sum) / (double)(local_area*2.0);
+		double res;
+		ave == 0 ? res = 0 : res = max_grad[i].first - ave;		// res = 0 for edges of the image
+		diff_to_ave.push_back(pair<double,int>(res, max_grad[i].second));
+	}
+	sort(diff_to_ave.begin(), diff_to_ave.end(), myComparisonD);
 
 	int line_col_1, line_col_2;	// columns of the two ROI lines
 	bool line_col_2_found = false;
 	bool left_found = false;
-	for(int i = 0; i < size_to_save; i++){
-		if(abs(max[i].second - abs_grad_x.cols) > 5 && max[i].second > 5)
-		{
-			line_col_1 = max[i].second;
-			cout << "line_col_1 = " << line_col_1 << endl;
-			break;
-		}
-	}
+
+	line_col_1 = diff_to_ave[0].second;
 	if(line_col_1 < round(abs_grad_x.cols / 2.0))
 		left_found = true;
 	for(int i = 0; i < size_to_save; i++)
 	{
-		cout << "max: " << max[i].first << " at place " <<  max[i].second <<  endl;
-		if(abs(max[i].second - max[0].second) > 10 && !line_col_2_found
-				&& abs(max[i].second - abs_grad_x.cols) > 5 && max[i].second > 5	// must be at least 5 px away from the edge
-				&& ((left_found && max[i].second > round(abs_grad_x.cols / 2.0))
-					 || (!left_found && max[i].second < round(abs_grad_x.cols / 2.0)) ) )
+		cout << "max: " << diff_to_ave[i].first << " at place " <<  diff_to_ave[i].second <<  endl;
+		if(abs(diff_to_ave[i].second - line_col_1) > 10 && !line_col_2_found
+				&& ((left_found && diff_to_ave[i].second > round(abs_grad_x.cols / 2.0))
+					 || (!left_found && diff_to_ave[i].second < round(abs_grad_x.cols / 2.0)) ) )
 		{
-			line_col_2 = max[i].second;
+			line_col_2 = diff_to_ave[i].second;
 			line_col_2_found = true;
 			cout << "line_col_2: " << line_col_2 << endl;
 		}
